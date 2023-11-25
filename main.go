@@ -4,32 +4,25 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
-	"sync"
 	"time"
 )
 
-type bookStash struct {
-	stash map[string]chan struct{}
-	mu    *sync.Mutex
-}
-
 func main() {
-	bs := bookStash{
-		stash: make(map[string]chan struct{}, 10),
-		mu:    &sync.Mutex{},
-	}
+	bookStash := make(map[string]chan struct{}, 10)
 	for i := 0; i < 10; i++ {
-		bs.stash[strconv.Itoa(i)] = make(chan struct{}, 10)
+		bookStash[strconv.Itoa(i)] = make(chan struct{}, 2)
 	}
 	stopCh := time.After(10 * time.Second)
 
-	for i := 0; i < len(bs.stash); i++ {
+	for i := 0; i < len(bookStash); i++ {
 		i := i
 		go func(i int) {
 			for {
 				select {
-				case <-bs.stash[strconv.Itoa(i)]:
+				case <-bookStash[strconv.Itoa(i)]:
 					fmt.Printf("you returned the %d book\n", i)
+				default:
+					time.Sleep(1 * time.Second)
 				}
 			}
 		}(i)
@@ -37,14 +30,12 @@ func main() {
 
 	go func() {
 		for {
-			randBookInt := rand.Intn(10-0) + 0
+			randBookInt := rand.Intn(15-0) + 0
 			randBookStr := strconv.Itoa(randBookInt)
-			if _, ok := bs.stash[randBookStr]; !ok {
+			if _, ok := bookStash[randBookStr]; !ok {
 				fmt.Println(fmt.Errorf("we don't have requested book: %s", randBookStr))
 			}
-			bs.mu.Lock()
-			bs.stash[randBookStr] <- struct{}{}
-			bs.mu.Unlock()
+			bookStash[randBookStr] <- struct{}{}
 			fmt.Printf("you took the %s book\n", randBookStr)
 		}
 	}()
