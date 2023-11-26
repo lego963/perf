@@ -34,6 +34,7 @@ func main() {
 			randBookStr := strconv.Itoa(randBookInt)
 			if _, ok := bookStash[randBookStr]; !ok {
 				fmt.Println(fmt.Errorf("we don't have requested book: %s", randBookStr))
+				continue
 			}
 			bookStash[randBookStr] <- struct{}{}
 			fmt.Printf("you took the %s book\n", randBookStr)
